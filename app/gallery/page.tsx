@@ -18,7 +18,7 @@ export default async function GalleryPage() {
   const randomized = shuffle(photos);
 
   return (
-    <section className="pt-20">
+    <section className="pt-16 sm:pt-20">
       {/* Section header */}
       <div className="max-w-screen-xl mx-auto px-6 sm:px-10 mb-14">
         <div className="w-8 h-px bg-white/20 mb-8" />

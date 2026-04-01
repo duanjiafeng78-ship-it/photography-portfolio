@@ -39,11 +39,11 @@ export default async function PhotoDetailPage({ params }: Props) {
     : [];
 
   return (
-    <section className="pt-20 pb-20 min-h-screen">
-      {/* Fixed back button — sits below navbar */}
+    <section className="pt-16 sm:pt-20 pb-20 min-h-screen">
+      {/* Back button — fixed on desktop, inline on mobile */}
       <Link
         href="/gallery"
-        className="fixed top-16 left-6 z-40 flex items-center gap-2 text-[10px] tracking-[0.2em] uppercase text-white/35 hover:text-white/70 transition-colors duration-300 group"
+        className="static sm:fixed sm:top-16 sm:left-6 sm:z-40 flex items-center gap-2 text-[10px] tracking-[0.2em] uppercase text-white/35 hover:text-white/70 transition-colors duration-300 group mx-6 mt-4 sm:mx-0 sm:mt-0"
       >
         <span className="inline-block transition-transform duration-300 group-hover:-translate-x-1">←</span>
         <span>返回</span>

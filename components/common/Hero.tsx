@@ -35,7 +35,7 @@ export default function Hero({ backgroundPhotos = [] }: HeroProps) {
   }, [currentBg, backgroundPhotos.length]);
 
   return (
-    <section className="relative flex flex-col items-center justify-center min-h-screen px-6 text-center overflow-hidden">
+    <section className="relative flex flex-col items-center justify-center min-h-screen min-h-[100dvh] pt-14 px-6 text-center overflow-hidden">
       {/* Background slideshow */}
       {backgroundPhotos.length > 0 && (
         <>
@@ -71,7 +71,7 @@ export default function Hero({ backgroundPhotos = [] }: HeroProps) {
 
       {/* Content */}
       <div className="relative z-10 flex flex-col items-center">
-        <div className="w-12 h-px bg-white/20 mb-12" />
+        <div className="w-12 h-px bg-white/20 mb-6 sm:mb-12" />
 
         <h1
           className="text-[clamp(3rem,10vw,9rem)] font-extralight tracking-[0.15em] uppercase text-white leading-none"
@@ -97,7 +97,7 @@ export default function Hero({ backgroundPhotos = [] }: HeroProps) {
 
         <Link
           href="/gallery"
-          className="mt-16 px-10 py-3.5 border border-white/30 text-[10px] tracking-[0.3em] uppercase text-white/70 hover:bg-white hover:text-black hover:border-white transition-all duration-500"
+          className="mt-10 sm:mt-16 px-10 py-3.5 border border-white/30 text-[10px] tracking-[0.3em] uppercase text-white/70 hover:bg-white hover:text-black hover:border-white transition-all duration-500"
           style={{
             opacity: loaded ? 1 : 0,
             transform: loaded ? 'translateY(0)' : 'translateY(12px)',

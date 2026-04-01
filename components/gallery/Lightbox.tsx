@@ -87,14 +87,15 @@ export default function Lightbox({ photos, initialIndex, onClose }: LightboxProp
       onClick={handleBackdropClick}
     >
       {/* Top bar */}
-      <div className="fixed top-0 left-0 right-0 z-10 flex items-center justify-between px-6 pt-5 pointer-events-none">
+      <div className="fixed top-0 left-0 right-0 z-10 flex items-center justify-between px-4 sm:px-6 pointer-events-none"
+        style={{ paddingTop: 'max(1.25rem, env(safe-area-inset-top))' }}>
         <div className="text-white/40 text-xs tracking-wider pointer-events-none">
           {index + 1} / {photos.length}
         </div>
-        <div className="flex items-center gap-3 pointer-events-auto">
+        <div className="flex items-center gap-1 pointer-events-auto">
           {/* Zoom toggle */}
           <button
-            className={`transition-colors ${zoomed ? 'text-white' : 'text-white/50 hover:text-white'}`}
+            className={`p-3 transition-colors ${zoomed ? 'text-white' : 'text-white/50 hover:text-white'}`}
             onClick={(e) => { e.stopPropagation(); toggleZoom(); }}
             aria-label={zoomed ? '缩小' : '放大'}
             title={zoomed ? '缩小（双击图片也可切换）' : '放大（双击图片也可切换）'}
@@ -115,7 +116,7 @@ export default function Lightbox({ photos, initialIndex, onClose }: LightboxProp
           </button>
           {/* Close */}
           <button
-            className="text-white/50 hover:text-white transition-colors"
+            className="p-3 text-white/50 hover:text-white transition-colors"
             onClick={(e) => { e.stopPropagation(); handleClose(); }}
             aria-label="关闭"
           >
@@ -130,7 +131,7 @@ export default function Lightbox({ photos, initialIndex, onClose }: LightboxProp
       {!zoomed && photos.length > 1 && (
         <>
           <button
-            className="fixed left-4 sm:left-8 top-1/2 -translate-y-1/2 text-white/40 hover:text-white transition-all hover:scale-110 p-2 z-10"
+            className="fixed left-2 sm:left-8 top-1/2 -translate-y-1/2 text-white/40 hover:text-white transition-all hover:scale-110 p-4 z-10"
             onClick={(e) => { e.stopPropagation(); prev(); }}
             aria-label="上一张"
           >
@@ -139,7 +140,7 @@ export default function Lightbox({ photos, initialIndex, onClose }: LightboxProp
             </svg>
           </button>
           <button
-            className="fixed right-4 sm:right-8 top-1/2 -translate-y-1/2 text-white/40 hover:text-white transition-all hover:scale-110 p-2 z-10"
+            className="fixed right-2 sm:right-8 top-1/2 -translate-y-1/2 text-white/40 hover:text-white transition-all hover:scale-110 p-4 z-10"
             onClick={(e) => { e.stopPropagation(); next(); }}
             aria-label="下一张"
           >
@@ -178,7 +179,7 @@ export default function Lightbox({ photos, initialIndex, onClose }: LightboxProp
       ) : (
         // Normal: constrained 90vw/90vh
         <div
-          className={`relative max-w-[90vw] max-h-[90vh] transition-all duration-300 ${
+          className={`relative max-w-[90vw] max-h-[85dvh] transition-all duration-300 ${
             entering ? 'scale-95 opacity-0' : transitioning ? 'scale-[0.98] opacity-0' : 'scale-100 opacity-100'
           }`}
           onClick={handleImageClick}
@@ -201,7 +202,7 @@ export default function Lightbox({ photos, initialIndex, onClose }: LightboxProp
             alt=""
             width={current.width}
             height={current.height}
-            className="max-w-[90vw] max-h-[90vh] w-auto h-auto object-contain rounded-sm"
+            className="max-w-[90vw] max-h-[85dvh] w-auto h-auto object-contain rounded-sm"
             draggable={false}
             priority
             sizes="90vw"

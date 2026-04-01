@@ -2,7 +2,7 @@ export const metadata = { title: '关于 — Portfolio' };
 
 export default function AboutPage() {
   return (
-    <section className="pt-28 pb-20">
+    <section className="pt-20 sm:pt-28 pb-20">
       <div className="max-w-screen-xl mx-auto px-6 sm:px-10">
         {/* Header */}
         <div className="mb-20">

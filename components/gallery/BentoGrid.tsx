@@ -83,7 +83,7 @@ export default function BentoGrid({ photos }: BentoGridProps) {
         className="md:hidden grid w-full gap-1"
         style={{
           gridTemplateColumns: 'repeat(2, 1fr)',
-          gridTemplateRows: 'repeat(3, 52vw)',
+          gridTemplateRows: 'repeat(3, min(52vw, 240px))',
         }}
       >
         <div style={{ gridColumn: '1 / span 2', gridRow: '1' }}>
