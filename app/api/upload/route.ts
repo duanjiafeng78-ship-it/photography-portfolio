@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { generateSignedUploadParams, checkPhotoByHash, checkPhotoByFilename } from '@/lib/cloudinary';
+import { generateSignedUploadParams, checkPhotoByHash, checkPhotoByEtag } from '@/lib/cloudinary';
 import { verifyToken, COOKIE_NAME } from '@/lib/auth';
 import type { PhotoCategory } from '@/lib/types';
 
 const VALID_CATEGORIES = new Set<string>(['commercial', 'personal']);
 
 /**
- * GET /api/upload?filename=<name>  — check duplicate by filename
- * GET /api/upload?sha256=<hash>    — check duplicate by hash (legacy)
+ * GET /api/upload?etag=<md5>   — check duplicate by content hash (etag)
+ * GET /api/upload?sha256=<hash> — check duplicate by hash (legacy)
  */
 export async function GET(request: NextRequest) {
   const token = request.cookies.get(COOKIE_NAME)?.value;
@@ -15,18 +15,18 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const filename = request.nextUrl.searchParams.get('filename');
+  const etag = request.nextUrl.searchParams.get('etag');
   const sha256 = request.nextUrl.searchParams.get('sha256');
 
-  if (filename) {
-    const exists = await checkPhotoByFilename(filename);
+  if (etag) {
+    const exists = await checkPhotoByEtag(etag);
     return NextResponse.json({ exists });
   }
   if (sha256) {
     const exists = await checkPhotoByHash(sha256);
     return NextResponse.json({ exists });
   }
-  return NextResponse.json({ error: 'missing filename or sha256' }, { status: 400 });
+  return NextResponse.json({ error: 'missing etag or sha256' }, { status: 400 });
 }
 
 /**

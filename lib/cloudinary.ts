@@ -113,18 +113,14 @@ export async function checkPhotoByHash(sha256: string): Promise<boolean> {
 }
 
 /**
- * Check if a photo with a similar filename already exists (by public_id pattern match).
+ * Check if a photo with the same content (etag/MD5) already exists.
+ * Computes MD5 on the client and compares against Cloudinary etags.
  */
-export async function checkPhotoByFilename(filename: string): Promise<boolean> {
-  if (!process.env.CLOUDINARY_CLOUD_NAME) return false;
-  // Strip extension to get base name
-  const base = filename.replace(/\.[^.]+$/, '');
-  // Normalize: replace non-alphanumeric (except Chinese chars) with wildcards
-  // Cloudinary converts spaces/special chars to underscores in public_id
-  const normalized = base.replace(/[^a-zA-Z0-9\u4e00-\u9fff]+/g, '*');
+export async function checkPhotoByEtag(etag: string): Promise<boolean> {
+  if (!process.env.CLOUDINARY_CLOUD_NAME || !etag) return false;
   try {
     const result = await cloudinary.search
-      .expression(`public_id:portfolio/*${normalized}*`)
+      .expression(`folder=portfolio/* AND etag=${etag}`)
       .max_results(1)
       .execute();
     return (result.total_count ?? 0) > 0;

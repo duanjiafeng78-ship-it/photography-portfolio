@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef, useState } from 'react';
+import SparkMD5 from 'spark-md5';
 import type { PhotoCategory } from '@/lib/types';
 
 interface UploadFormProps {
@@ -61,6 +62,20 @@ function loadImage(file: File): Promise<HTMLImageElement> {
 
 function canvasToBlob(canvas: HTMLCanvasElement, type: string, quality: number): Promise<Blob> {
   return new Promise((resolve) => canvas.toBlob((b) => resolve(b!), type, quality));
+}
+
+/** Compute MD5 hash of a file (matches Cloudinary etag). */
+function computeMD5(file: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const spark = new SparkMD5.ArrayBuffer();
+      spark.append(reader.result as ArrayBuffer);
+      resolve(spark.end());
+    };
+    reader.onerror = () => reject(new Error('无法读取文件'));
+    reader.readAsArrayBuffer(file);
+  });
 }
 
 export default function UploadForm({ onUploadComplete }: UploadFormProps) {
@@ -149,21 +164,25 @@ export default function UploadForm({ onUploadComplete }: UploadFormProps) {
     }));
     setBatches((prev) => [...prev, { id: batchId, items, collapsed: false }]);
 
-    // ── Phase 1: Check ALL duplicates by filename ──
+    // ── Phase 1: Check ALL duplicates by content hash (MD5/etag) ──
     const isDuplicate: boolean[] = [];
+    const fileHashes: string[] = [];
     for (let i = 0; i < fileArr.length; i++) {
-      updateBatchItem(batchId, i, { status: '检测重复…' });
+      updateBatchItem(batchId, i, { status: '计算文件指纹…' });
       try {
-        const res = await fetch(`/api/upload?filename=${encodeURIComponent(fileArr[i].name)}`);
+        const md5 = await computeMD5(fileArr[i]);
+        fileHashes.push(md5);
+        updateBatchItem(batchId, i, { status: '检测重复…' });
+        const res = await fetch(`/api/upload?etag=${encodeURIComponent(md5)}`);
         if (res.ok) {
           const { exists } = await res.json();
           if (exists) {
-            updateBatchItem(batchId, i, { error: '同名照片已存在，跳过', status: undefined });
+            updateBatchItem(batchId, i, { error: '相同内容已存在，跳过', status: undefined });
             isDuplicate.push(true);
             continue;
           }
         }
-      } catch { /* treat as non-duplicate */ }
+      } catch { fileHashes.push(''); /* treat as non-duplicate */ }
       isDuplicate.push(false);
     }
 
@@ -260,7 +279,7 @@ export default function UploadForm({ onUploadComplete }: UploadFormProps) {
           onChange={(e) => { if (e.target.files && !busy) uploadFiles(e.target.files); e.target.value = ''; }}
         />
         <p className="text-sm text-gray-500">拖拽照片到此处，或点击选择文件</p>
-        <p className="text-xs text-gray-400 mt-1">支持 JPEG、PNG、WebP、HEIC 等格式，自动检测同名文件，大图自动压缩</p>
+        <p className="text-xs text-gray-400 mt-1">支持 JPEG、PNG、WebP、HEIC 等格式，自动检测重复内容，大图自动压缩</p>
       </div>
 
       {/* Upload batches */}

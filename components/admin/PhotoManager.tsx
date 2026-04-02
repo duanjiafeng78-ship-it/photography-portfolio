@@ -8,11 +8,28 @@ interface PhotoManagerProps {
   refreshKey: number;
 }
 
+type SortOption = 'date-desc' | 'date-asc' | 'name-asc' | 'name-desc';
+
+function sortPhotos(photos: Photo[], sort: SortOption): Photo[] {
+  const sorted = [...photos];
+  switch (sort) {
+    case 'date-desc':
+      return sorted.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    case 'date-asc':
+      return sorted.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+    case 'name-asc':
+      return sorted.sort((a, b) => a.id.localeCompare(b.id));
+    case 'name-desc':
+      return sorted.sort((a, b) => b.id.localeCompare(a.id));
+  }
+}
+
 export default function PhotoManager({ refreshKey }: PhotoManagerProps) {
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState<Set<string>>(new Set());
   const [featuredUpdating, setFeaturedUpdating] = useState<Set<string>>(new Set());
+  const [sortBy, setSortBy] = useState<SortOption>('date-desc');
 
   // Batch mode
   const [batchMode, setBatchMode] = useState(false);
@@ -177,7 +194,19 @@ export default function PhotoManager({ refreshKey }: PhotoManagerProps) {
     <div>
       {/* Toolbar */}
       <div className="flex items-center justify-between mb-4">
-        <span className="text-sm text-gray-500">{photos.length} 张照片</span>
+        <div className="flex items-center gap-3">
+          <span className="text-sm text-gray-500">{photos.length} 张照片</span>
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value as SortOption)}
+            className="text-xs border border-black/10 rounded-lg px-2 py-1.5 text-gray-600 bg-white"
+          >
+            <option value="date-desc">日期 ↓ 最新</option>
+            <option value="date-asc">日期 ↑ 最早</option>
+            <option value="name-asc">名称 A→Z</option>
+            <option value="name-desc">名称 Z→A</option>
+          </select>
+        </div>
         <div className="flex items-center gap-2">
           {batchMode && (
             <button
@@ -202,7 +231,7 @@ export default function PhotoManager({ refreshKey }: PhotoManagerProps) {
 
       {/* Grid */}
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-        {photos.map((photo) => {
+        {sortPhotos(photos, sortBy).map((photo) => {
           const isSelected = selected.has(photo.id);
           return (
             <div
