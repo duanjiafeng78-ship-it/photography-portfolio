@@ -11,20 +11,43 @@ cloudinary.config({
 export default cloudinary;
 
 /**
- * Build a Cloudinary URL (no server-side watermark — CSS watermark applied in frontend).
+ * Build a Cloudinary delivery URL. Adds a watermark overlay for commercial photos.
  */
-export function buildWatermarkedUrl(publicId: string, width = 1200): string {
+export function buildWatermarkedUrl(publicId: string, width = 1200, categories: import('./types').PhotoCategory[] = []): string {
   const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || process.env.CLOUDINARY_CLOUD_NAME;
-  // Use proxy path for better China accessibility; falls back to direct URL on server
+  const base = `w_${width},c_limit,f_auto,q_auto`;
+  // Text watermark for commercial photos: semi-transparent, bottom-right
+  const watermark = categories.includes('commercial')
+    ? '/l_text:Arial_32_bold:Portfolio/co_white,o_35,g_south_east,x_24,y_20,fl_layer_apply'
+    : '';
   if (typeof window !== 'undefined') {
-    return `/cdn-img/image/upload/w_${width},c_limit,f_auto,q_auto/${publicId}`;
+    return `/cdn-img/image/upload/${base}${watermark}/${publicId}`;
   }
-  return `https://res.cloudinary.com/${cloudName}/image/upload/w_${width},c_limit,f_auto,q_auto/${publicId}`;
+  return `https://res.cloudinary.com/${cloudName}/image/upload/${base}${watermark}/${publicId}`;
 }
 
 /** Map Cloudinary tags to PhotoCategory array. */
 function mapCategories(tags?: string[]): PhotoCategory[] {
   return (['commercial', 'personal'] as const).filter((t) => tags?.includes(t));
+}
+
+/** Parse Cloudinary context object/string into a plain key→value map. */
+function parseContext(ctx?: unknown): Record<string, string> {
+  if (!ctx) return {};
+  // v2 SDK returns { custom: { key: value } }
+  if (typeof ctx === 'object' && ctx !== null && 'custom' in ctx) {
+    return (ctx as { custom: Record<string, string> }).custom ?? {};
+  }
+  // Fallback: "key=value|key2=value2" string
+  if (typeof ctx === 'string') {
+    const out: Record<string, string> = {};
+    for (const pair of ctx.split('|')) {
+      const eq = pair.indexOf('=');
+      if (eq > 0) out[pair.slice(0, eq)] = pair.slice(eq + 1);
+    }
+    return out;
+  }
+  return {};
 }
 
 /**
@@ -40,19 +63,24 @@ export async function fetchPhotos(category?: PhotoCategory): Promise<Photo[]> {
       .expression(expression)
       .sort_by('created_at', 'desc')
       .with_field('tags')
-      .with_field('image_metadata')
+      .with_field('context')
       .max_results(500)
       .execute();
 
-    return (result.resources || []).map((r: CloudinaryResource) => ({
-      id: r.public_id,
-      url: buildWatermarkedUrl(r.public_id),
-      width: r.width,
-      height: r.height,
-      categories: mapCategories(r.tags),
-      createdAt: r.created_at,
-      featured: r.tags?.includes('featured') ?? false,
-    }));
+    return (result.resources || []).map((r: CloudinaryResource) => {
+      const categories = mapCategories(r.tags);
+      const ctx = parseContext(r.context);
+      return {
+        id: r.public_id,
+        url: buildWatermarkedUrl(r.public_id, 1200, categories),
+        width: r.width,
+        height: r.height,
+        categories,
+        createdAt: r.created_at,
+        featured: r.tags?.includes('featured') ?? false,
+        caption: ctx.caption || undefined,
+      };
+    });
   } catch (error) {
     console.error('Cloudinary fetch error:', error);
     return [];
@@ -135,7 +163,24 @@ interface CloudinaryResource {
   height: number;
   created_at: string;
   tags?: string[];
+  context?: unknown;
   image_metadata?: Record<string, string>;
+}
+
+/**
+ * Update the caption (story) for a photo stored in Cloudinary context.
+ */
+export async function updatePhotoCaption(publicId: string, caption: string): Promise<boolean> {
+  try {
+    await cloudinary.uploader.explicit(publicId, {
+      type: 'upload',
+      context: { caption: caption.trim() },
+    });
+    return true;
+  } catch (error) {
+    console.error('Failed to update caption:', error);
+    return false;
+  }
 }
 
 /**
@@ -185,15 +230,18 @@ export async function fetchFeaturedPhotos(): Promise<Photo[]> {
       .max_results(20)
       .execute();
 
-    return (result.resources || []).map((r: CloudinaryResource) => ({
-      id: r.public_id,
-      url: buildWatermarkedUrl(r.public_id),
-      width: r.width,
-      height: r.height,
-      categories: mapCategories(r.tags),
-      createdAt: r.created_at,
-      featured: true,
-    }));
+    return (result.resources || []).map((r: CloudinaryResource) => {
+      const categories = mapCategories(r.tags);
+      return {
+        id: r.public_id,
+        url: buildWatermarkedUrl(r.public_id, 1200, categories),
+        width: r.width,
+        height: r.height,
+        categories,
+        createdAt: r.created_at,
+        featured: true,
+      };
+    });
   } catch (error) {
     console.error('Cloudinary featured fetch error:', error);
     return [];
@@ -209,15 +257,20 @@ export async function fetchPhotoById(publicId: string): Promise<Photo & { exif?:
   try {
     const r = await cloudinary.api.resource(publicId, {
       image_metadata: true,
+      tags: true,
+      context: true,
     }) as CloudinaryResource & { image_metadata?: Record<string, string> };
 
+    const categories = mapCategories(r.tags);
+    const ctx = parseContext(r.context);
     return {
       id: r.public_id,
-      url: buildWatermarkedUrl(r.public_id, 2000),
+      url: buildWatermarkedUrl(r.public_id, 2000, categories),
       width: r.width,
       height: r.height,
-      categories: mapCategories(r.tags),
+      categories,
       createdAt: r.created_at,
+      caption: ctx.caption || undefined,
       exif: r.image_metadata ?? undefined,
     };
   } catch (error) {

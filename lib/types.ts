@@ -8,4 +8,5 @@ export interface Photo {
   categories: PhotoCategory[];
   createdAt: string;
   featured?: boolean; // whether shown in homepage slideshow
+  caption?: string;   // photographer's story / description
 }

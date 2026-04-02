@@ -31,6 +31,11 @@ export default function PhotoManager({ refreshKey }: PhotoManagerProps) {
   const [featuredUpdating, setFeaturedUpdating] = useState<Set<string>>(new Set());
   const [sortBy, setSortBy] = useState<SortOption>('date-desc');
 
+  // Caption editing modal
+  const [captionModal, setCaptionModal] = useState<{ id: string; current: string } | null>(null);
+  const [captionValue, setCaptionValue] = useState('');
+  const [captionSaving, setCaptionSaving] = useState(false);
+
   // Batch mode
   const [batchMode, setBatchMode] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -59,6 +64,28 @@ export default function PhotoManager({ refreshKey }: PhotoManagerProps) {
 
   function selectAll() {
     setSelected(new Set(photos.map((p) => p.id)));
+  }
+
+  function openCaptionModal(photo: Photo) {
+    setCaptionModal({ id: photo.id, current: photo.caption ?? '' });
+    setCaptionValue(photo.caption ?? '');
+  }
+
+  async function saveCaption() {
+    if (!captionModal) return;
+    setCaptionSaving(true);
+    try {
+      await fetch(`/api/photos/${encodeURIComponent(captionModal.id)}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ caption: captionValue }),
+      });
+      setPhotos((prev) => prev.map((p) => p.id === captionModal.id ? { ...p, caption: captionValue } : p));
+      setCaptionModal(null);
+    } catch {
+      alert('保存失败，请重试');
+    }
+    setCaptionSaving(false);
   }
 
   // ── Single-photo actions ──────────────────────────────────────────────
@@ -311,6 +338,12 @@ export default function PhotoManager({ refreshKey }: PhotoManagerProps) {
                       );
                     })}
                     <button
+                      className="text-xs px-2 py-1 rounded transition-colors text-left bg-black/60 text-white/70 hover:bg-black/80"
+                      onClick={() => openCaptionModal(photo)}
+                    >
+                      ✏ {photo.caption ? '编辑简介' : '添加简介'}
+                    </button>
+                    <button
                       className="text-xs text-white bg-red-500 hover:bg-red-600 px-2 py-1 rounded transition-colors"
                       onClick={() => handleDelete(photo)}
                     >
@@ -323,6 +356,40 @@ export default function PhotoManager({ refreshKey }: PhotoManagerProps) {
           );
         })}
       </div>
+
+      {/* Caption edit modal */}
+      {captionModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={() => setCaptionModal(null)}>
+          <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-sm font-semibold text-gray-800 mb-1">照片简介 / 故事</h3>
+            <p className="text-xs text-gray-400 mb-4">这段文字将在访客点开照片时显示</p>
+            <textarea
+              className="w-full border border-gray-200 rounded-xl p-3 text-sm text-gray-800 resize-none focus:outline-none focus:ring-2 focus:ring-gray-900/20"
+              rows={5}
+              placeholder="写下这张照片背后的故事、拍摄背景或创作心得…"
+              value={captionValue}
+              onChange={(e) => setCaptionValue(e.target.value)}
+              autoFocus
+            />
+            <div className="flex gap-3 mt-4 justify-end">
+              <button
+                className="text-sm px-4 py-2 text-gray-500 hover:text-gray-800 transition-colors"
+                onClick={() => setCaptionModal(null)}
+                disabled={captionSaving}
+              >
+                取消
+              </button>
+              <button
+                className="text-sm px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-700 transition-colors disabled:opacity-50"
+                onClick={saveCaption}
+                disabled={captionSaving}
+              >
+                {captionSaving ? '保存中…' : '保存'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Batch action bar */}
       {batchMode && (
