@@ -45,7 +45,7 @@ export default function Hero({ backgroundPhotos = [] }: HeroProps) {
               src={backgroundPhotos[currentBg]?.url ?? ''}
               alt=""
               fill
-              className="object-cover"
+              className="object-contain sm:object-cover"
               priority
               sizes="100vw"
               draggable={false}
@@ -58,7 +58,7 @@ export default function Hero({ backgroundPhotos = [] }: HeroProps) {
               src={backgroundPhotos[nextBg]?.url ?? ''}
               alt=""
               fill
-              className="object-cover"
+              className="object-contain sm:object-cover"
               sizes="100vw"
               draggable={false}
               style={{ transition: 'opacity 1.2s ease-in-out', opacity: crossfading ? 1 : 0 }}

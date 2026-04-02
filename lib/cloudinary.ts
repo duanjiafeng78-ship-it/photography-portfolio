@@ -15,6 +15,10 @@ export default cloudinary;
  */
 export function buildWatermarkedUrl(publicId: string, width = 1200): string {
   const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || process.env.CLOUDINARY_CLOUD_NAME;
+  // Use proxy path for better China accessibility; falls back to direct URL on server
+  if (typeof window !== 'undefined') {
+    return `/cdn-img/image/upload/w_${width},c_limit,f_auto,q_auto/${publicId}`;
+  }
   return `https://res.cloudinary.com/${cloudName}/image/upload/w_${width},c_limit,f_auto,q_auto/${publicId}`;
 }
 

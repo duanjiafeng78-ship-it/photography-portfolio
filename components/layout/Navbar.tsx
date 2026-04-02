@@ -52,7 +52,7 @@ export default function Navbar() {
           hidden && !menuOpen ? '-translate-y-full' : 'translate-y-0',
           scrolled || menuOpen
             ? 'bg-[#0f0f0f]/95 backdrop-blur-xl border-b border-white/5'
-            : 'bg-transparent border-b border-transparent',
+            : 'bg-gradient-to-b from-black/50 to-transparent border-b border-transparent',
         )}
       >
         <nav
@@ -64,6 +64,7 @@ export default function Navbar() {
           <Link
             href="/"
             className="text-xs font-light tracking-[0.2em] uppercase text-white/80 hover:text-white transition-colors"
+            style={{ textShadow: '0 1px 4px rgba(0,0,0,0.5)' }}
           >
             Portfolio
           </Link>
@@ -80,6 +81,7 @@ export default function Navbar() {
                       ? 'text-white'
                       : 'text-white/40 hover:text-white/80',
                   )}
+                  style={{ textShadow: '0 1px 4px rgba(0,0,0,0.5)' }}
                 >
                   {label}
                   {pathname === href && (
@@ -95,22 +97,23 @@ export default function Navbar() {
             className="md:hidden flex flex-col justify-center items-center w-10 h-10 gap-1.5"
             onClick={() => setMenuOpen((v) => !v)}
             aria-label={menuOpen ? '关闭菜单' : '打开菜单'}
+            style={{ filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.5))' }}
           >
             <span
               className={clsx(
-                'block w-5 h-px bg-white/70 transition-all duration-300 origin-center',
+                'block w-5 h-[1.5px] bg-white/90 transition-all duration-300 origin-center',
                 menuOpen ? 'rotate-45 translate-y-[5px]' : '',
               )}
             />
             <span
               className={clsx(
-                'block w-5 h-px bg-white/70 transition-all duration-300',
+                'block w-5 h-[1.5px] bg-white/90 transition-all duration-300',
                 menuOpen ? 'opacity-0 scale-x-0' : '',
               )}
             />
             <span
               className={clsx(
-                'block w-5 h-px bg-white/70 transition-all duration-300 origin-center',
+                'block w-5 h-[1.5px] bg-white/90 transition-all duration-300 origin-center',
                 menuOpen ? '-rotate-45 -translate-y-[5px]' : '',
               )}
             />
