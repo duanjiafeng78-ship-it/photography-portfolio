@@ -148,7 +148,7 @@ export async function checkPhotoByEtag(etag: string): Promise<boolean> {
   if (!process.env.CLOUDINARY_CLOUD_NAME || !etag) return false;
   try {
     const result = await cloudinary.search
-      .expression(`folder=portfolio/* AND etag=${etag}`)
+      .expression(`folder:portfolio AND etag="${etag}"`)
       .max_results(1)
       .execute();
     return (result.total_count ?? 0) > 0;

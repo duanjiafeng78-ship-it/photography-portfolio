@@ -164,40 +164,34 @@ export default function UploadForm({ onUploadComplete }: UploadFormProps) {
     }));
     setBatches((prev) => [...prev, { id: batchId, items, collapsed: false }]);
 
-    // ── Phase 1: Check ALL duplicates by content hash (MD5/etag) ──
-    const isDuplicate: boolean[] = [];
-    const fileHashes: string[] = [];
+    // ── Upload each file: compress → dedup check → upload ──
     for (let i = 0; i < fileArr.length; i++) {
-      updateBatchItem(batchId, i, { status: '计算文件指纹…' });
-      try {
-        const md5 = await computeMD5(fileArr[i]);
-        fileHashes.push(md5);
-        updateBatchItem(batchId, i, { status: '检测重复…' });
-        const res = await fetch(`/api/upload?etag=${encodeURIComponent(md5)}`);
-        if (res.ok) {
-          const { exists } = await res.json();
-          if (exists) {
-            updateBatchItem(batchId, i, { error: '相同内容已存在，跳过', status: undefined });
-            isDuplicate.push(true);
-            continue;
-          }
-        }
-      } catch { fileHashes.push(''); /* treat as non-duplicate */ }
-      isDuplicate.push(false);
-    }
-
-    // ── Phase 2: Upload non-duplicates ──
-    for (let i = 0; i < fileArr.length; i++) {
-      if (isDuplicate[i]) continue;
       const file = fileArr[i];
 
       try {
-        // Compress if oversized
+        // Compress if oversized (do this FIRST so MD5 matches what Cloudinary stores)
         let uploadBlob: Blob = file;
         if (file.size > MAX_UPLOAD_SIZE) {
           updateBatchItem(batchId, i, { status: '压缩中…' });
           uploadBlob = await compressImage(file);
         }
+
+        // Compute MD5 of the actual bytes that will be uploaded
+        updateBatchItem(batchId, i, { status: '计算文件指纹…' });
+        const md5 = await computeMD5(uploadBlob);
+
+        // Check duplicate by etag
+        updateBatchItem(batchId, i, { status: '检测重复…' });
+        try {
+          const res = await fetch(`/api/upload?etag=${encodeURIComponent(md5)}`);
+          if (res.ok) {
+            const { exists } = await res.json();
+            if (exists) {
+              updateBatchItem(batchId, i, { error: '相同内容已存在，跳过', status: undefined });
+              continue;
+            }
+          }
+        } catch { /* treat as non-duplicate */ }
 
         // Get signed params
         updateBatchItem(batchId, i, { status: '获取凭证…' });
